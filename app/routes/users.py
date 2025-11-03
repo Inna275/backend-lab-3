@@ -1,14 +1,11 @@
 from flask import Blueprint, request, jsonify
+from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 from app.models import db
 from app.models.user import UserModel
 from app.models.currency import CurrencyModel
 from app.schemas.user_schema import UserSchema
-
-from marshmallow import ValidationError
-from sqlalchemy.exc import IntegrityError
-
-import uuid
 
 
 users_bp = Blueprint("users", __name__)
@@ -42,7 +39,7 @@ def create_user():
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "User already exists"}), 409
+        return jsonify({"error": "Resource conflict"}), 409
 
     return jsonify(schema.dump(user)), 201
 

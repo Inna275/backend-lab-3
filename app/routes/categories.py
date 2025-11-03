@@ -1,13 +1,10 @@
 from flask import Blueprint, request, jsonify
+from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 from app.models import db
 from app.models.category import CategoryModel
 from app.schemas.category_schema import CategorySchema
-
-from marshmallow import ValidationError
-from sqlalchemy.exc import IntegrityError
-
-import uuid
 
 
 categories_bp = Blueprint("categories", __name__)
@@ -28,8 +25,7 @@ def create_category():
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Category already exists"}), 409
-
+        return jsonify({"error": "Resource conflict"}), 409
 
     return jsonify(schema.dump(category)), 201
 

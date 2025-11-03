@@ -1,11 +1,10 @@
 from flask import Blueprint, request, jsonify
+from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 from app.models import db
 from app.models.currency import CurrencyModel
 from app.schemas.currency_schema import CurrencySchema
-
-from marshmallow import ValidationError
-from sqlalchemy.exc import IntegrityError
 
 
 currencies_bp = Blueprint("currencies", __name__)
@@ -26,7 +25,7 @@ def create_currency():
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Currency already exists"}), 409
+        return jsonify({"error": "Resource conflict"}), 409
 
     return jsonify(schema.dump(currency)), 201
 
@@ -58,6 +57,6 @@ def delete_currency(currency_id):
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Currency is used by some users or records"}), 400
+        return jsonify({"error": "Currency is used"}), 400
 
     return jsonify({"message": "Currency deleted"}), 200

@@ -10,5 +10,5 @@ class CategoryModel(db.Model):
         "RecordModel", 
         back_populates="category", 
         lazy="dynamic", 
-        cascade='all, delete-orphan',
+        cascade="all, delete-orphan",
     )

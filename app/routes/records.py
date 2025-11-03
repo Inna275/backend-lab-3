@@ -1,14 +1,11 @@
 from flask import Blueprint, request, jsonify
+from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 from app.models import db
 from app.models.user import UserModel
 from app.models.record import RecordModel
 from app.schemas.record_schema import RecordSchema
-
-from marshmallow import ValidationError
-from sqlalchemy.exc import IntegrityError
-
-import uuid
 
 
 records_bp = Blueprint("records", __name__)
@@ -40,7 +37,7 @@ def create_record():
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Invalid user_id or category_id"}), 400
+        return jsonify({"error": "Related resource not found"}), 400
 
     return jsonify(schema.dump(record)), 201
 

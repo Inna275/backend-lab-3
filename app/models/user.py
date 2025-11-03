@@ -15,7 +15,7 @@ class UserModel(db.Model):
         "RecordModel", 
         back_populates="user", 
         lazy="dynamic", 
-        cascade='all, delete-orphan',
+        cascade="all, delete-orphan",
     )
     
     default_currency = db.relationship("CurrencyModel", foreign_keys=[default_currency_id])
