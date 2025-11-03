@@ -1,5 +1,8 @@
+import os
+import time
+
 from flask import Flask
-from flask_migrate import Migrate
+from flask_migrate import Migrate, init, stamp, migrate as fmigrate, upgrade
 
 from .models import db
 
@@ -24,3 +27,12 @@ app.register_blueprint(users_bp)
 app.register_blueprint(categories_bp)
 app.register_blueprint(records_bp)
 app.register_blueprint(currencies_bp)
+
+time.sleep(5)
+
+with app.app_context():
+    if not os.path.exists('migrations'):
+        init()
+        stamp()
+        fmigrate(message="Initial migration")
+        upgrade()
