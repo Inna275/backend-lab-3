@@ -1,16 +1,18 @@
-from app import app
-from flask import jsonify
+from flask import Blueprint, jsonify
 from datetime import datetime
 
 
-@app.route("/")
+general_bp = Blueprint("general", __name__)
+
+
+@general_bp.route("/")
 def greeting():
     return jsonify({
         "message": "Hello!"
     }), 200
 
 
-@app.route("/healthcheck", methods=["GET"])
+@general_bp.route("/healthcheck", methods=["GET"])
 def healthcheck():
     return jsonify({
         "status": "ok", 

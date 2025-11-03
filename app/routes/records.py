@@ -1,13 +1,19 @@
-from app import app
-from flask import request, jsonify
-from app.data import records
-from datetime import datetime
+from flask import Blueprint, request, jsonify
+
+from app.models import db
+from app.models.record import RecordModel
 from app.schemas.record_schema import RecordSchema
+
 from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
+
 import uuid
 
 
-@app.post("/record")
+records_bp = Blueprint("records", __name__)
+
+
+@records_bp.post("/record")
 def create_record():
     schema = RecordSchema()
     try:
@@ -15,52 +21,55 @@ def create_record():
     except ValidationError as err:
         return jsonify({"error": err.messages}), 400
 
-    record_id = uuid.uuid4().hex
-    record = {
-        "id": record_id,
-        "user_id": data["user_id"],
-        "category_id": data["category_id"],
-        "amount": data["amount"],
-        "created_at": datetime.utcnow()
-    }
-    records[record_id] = record
+    record = RecordModel(
+        user_id=data["user_id"],
+        category_id=data["category_id"],
+        amount=data["amount"]
+    )
+    db.session.add(record)
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Invalid user_id or category_id"}), 400
+
     return jsonify(schema.dump(record)), 201
 
 
-@app.get("/record/<record_id>")
+@records_bp.get("/record/<int:record_id>")
 def get_record(record_id):
-    record = records.get(record_id)
+    record = RecordModel.query.get(record_id)
     if not record:
         return jsonify({"error": "Record not found"}), 404
     schema = RecordSchema()
     return jsonify(schema.dump(record)), 200
 
 
-@app.get("/record")
+@records_bp.get("/record")
 def get_records():
-    user_id = request.args.get("user_id")
-    category_id = request.args.get("category_id")
+    user_id = request.args.get("user_id", type=int)
+    category_id = request.args.get("category_id", type=int)
 
     if not user_id and not category_id:
         return jsonify({"error": "Provide user_id or category_id"}), 400
 
-    filtered = []
-    for r in records.values():
-        if user_id and category_id:
-            if r["user_id"] == user_id and r["category_id"] == category_id:
-                filtered.append(r)
-        elif user_id and r["user_id"] == user_id:
-            filtered.append(r)
-        elif category_id and r["category_id"] == category_id:
-            filtered.append(r)
+    query = RecordModel.query
+    if user_id:
+        query = query.filter_by(user_id=user_id)
+    if category_id:
+        query = query.filter_by(category_id=category_id)
 
+    records = query.all()
     schema = RecordSchema(many=True)
-    return jsonify(schema.dump(filtered)), 200
+    return jsonify(schema.dump(records)), 200
 
 
-@app.delete("/record/<record_id>")
+@records_bp.delete("/record/<int:record_id>")
 def delete_record(record_id):
-    if record_id not in records:
+    record = RecordModel.query.get(record_id)
+    if not record:
         return jsonify({"error": "Record not found"}), 404
-    records.pop(record_id)
+    db.session.delete(record)
+    db.session.commit()
     return jsonify({"message": "Record deleted"}), 200
