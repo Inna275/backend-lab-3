@@ -19,7 +19,7 @@ app.config.from_pyfile('config.py', silent=True)
 
 db.init_app(app)
 
-migrate = Migrate(app, db)
+migrate = Migrate()
 migrate.init_app(app, db)
 
 app.register_blueprint(general_bp)
